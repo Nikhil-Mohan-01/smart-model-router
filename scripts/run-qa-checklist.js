@@ -185,7 +185,12 @@ test('Router falls back to Copilot when keys are missing', () => {
     const { ModelRouter } = require(path.join(outRoot, 'router/modelRouter.js'));
     const tracker = new UsageTracker(createMemento());
     const router = new ModelRouter(tracker);
-    const decision = router.resolve('explain');
+    const decision = router.resolve('explain', 0, undefined, {
+      openai: false,
+      anthropic: false,
+      google: false,
+      copilot: true,
+    });
     assert.equal(decision.modelId, 'copilot');
     assert.match(decision.reason, /no API key/i);
   });
@@ -225,7 +230,12 @@ test('Router skips budget-exceeded model and falls back', () => {
       },
     }));
     const router = new ModelRouter(tracker);
-    const decision = router.resolve('codegen');
+    const decision = router.resolve('codegen', 0, undefined, {
+      openai: true,
+      anthropic: false,
+      google: false,
+      copilot: true,
+    });
     assert.equal(decision.modelId, 'copilot');
     assert.match(decision.reason, /budget/i);
   });
@@ -251,7 +261,12 @@ test('Context-window guard skips small-context model when prompt is too large', 
     const { ModelRouter } = require(path.join(outRoot, 'router/modelRouter.js'));
     const tracker = new UsageTracker(createMemento());
     const router = new ModelRouter(tracker);
-    const decision = router.resolve('codegen', 150000);
+    const decision = router.resolve('codegen', 150000, undefined, {
+      openai: true,
+      anthropic: false,
+      google: true,
+      copilot: true,
+    });
     assert.equal(decision.modelId, 'gemini-1.5-flash');
     assert.match(decision.reason, /context too large/i);
   });
@@ -417,6 +432,32 @@ test('VSIX packaging succeeds', () => {
   runCommand('npx @vscode/vsce package');
   const vsixPath = path.join(projectRoot, 'smart-model-router-0.1.0.vsix');
   assert.ok(require('node:fs').existsSync(vsixPath), 'Expected VSIX file to exist after packaging');
+});
+
+test('API key manager stores keys in secret storage', async () => {
+  const memory = new Map();
+  const secretStorage = {
+    async get(key) {
+      return memory.get(key);
+    },
+    async store(key, value) {
+      memory.set(key, value);
+    },
+    async delete(key) {
+      memory.delete(key);
+    },
+    onDidChange() {
+      return { dispose() {} };
+    },
+  };
+
+  const { ApiKeyManager } = require(path.join(outRoot, 'security/apiKeyManager.js'));
+  const manager = new ApiKeyManager(secretStorage);
+  await manager.setKey('openai', 'sk-secret');
+  assert.equal(await manager.hasKey('openai'), true);
+  assert.equal(await manager.getKey('openai'), 'sk-secret');
+  await manager.clearKey('openai');
+  assert.equal(await manager.getKey('openai'), '');
 });
 
 async function main() {

@@ -44,17 +44,11 @@ The extension will:
 npm install
 ```
 
-### 2. Add API keys
+### 2. Add API keys (secure storage)
 
-Open VS Code Settings (`Cmd+,`) and search `smartRouter`:
+Run command palette action `Smart Router: Configure API Keys (Secure)` and save keys in VS Code Secret Storage.
 
-| Setting | Description |
-|---|---|
-| `smartRouter.anthropicApiKey` | Anthropic API key |
-| `smartRouter.openaiApiKey` | OpenAI API key |
-| `smartRouter.googleApiKey` | Google AI API key |
-
-Keys without values are simply skipped during routing.
+If a provider key is not set, that provider is automatically skipped during routing.
 
 ### 3. Configure budgets (optional)
 
@@ -95,6 +89,7 @@ The router works down this list and picks the first model that:
 | `Smart Router: Show Usage Dashboard` | Open the visual usage dashboard |
 | `Smart Router: Reset Usage Stats` | Reset today's spend counters |
 | `Smart Router: Configure Models & Budgets` | Open settings |
+| `Smart Router: Configure API Keys (Secure)` | Store provider keys in VS Code Secret Storage |
 
 ---
 
@@ -109,6 +104,11 @@ npm run watch
 
 # Press F5 in VS Code to launch Extension Development Host
 ```
+
+## Security Notes
+
+- Provider API keys are read from VS Code Secret Storage at runtime.
+- Usage data contains token/cost totals only; prompt text and API keys are not persisted by this extension.
 
 ---
 

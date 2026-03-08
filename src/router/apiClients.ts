@@ -173,11 +173,14 @@ export async function callGoogle(
   onChunk: (chunk: string) => void
 ): Promise<ModelResponse> {
   const endpoint =
-    `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?key=${apiKey}&alt=sse`;
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse`;
 
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [

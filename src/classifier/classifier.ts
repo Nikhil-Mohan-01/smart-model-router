@@ -117,12 +117,15 @@ Respond ONLY with valid JSON, no markdown:
 
 // ─── Exported Classifier ─────────────────────────────────────────────────
 
-export async function classifyTask(prompt: string): Promise<ClassificationResult> {
+export async function classifyTask(
+  prompt: string,
+  options?: { mode?: 'heuristic' | 'llm'; openaiApiKey?: string }
+): Promise<ClassificationResult> {
   const config = vscode.workspace.getConfiguration('smartRouter');
-  const mode = config.get<string>('classifierMode', 'heuristic');
+  const mode = options?.mode ?? config.get<string>('classifierMode', 'heuristic');
 
   if (mode === 'llm') {
-    const apiKey = config.get<string>('openaiApiKey', '');
+    const apiKey = options?.openaiApiKey ?? '';
     if (apiKey) {
       try {
         return await llmClassify(prompt, apiKey);

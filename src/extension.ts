@@ -9,6 +9,7 @@ import { ModelResponse, MODEL_REGISTRY } from './types';
 import { getEditorContext } from './context/editorContext';
 import { ConversationManager, ProviderMessage } from './context/conversationManager';
 import { estimateTokens } from './utils/tokenEstimator';
+import { ApiKeyManager } from './security/apiKeyManager';
 
 let manualOverrideModelId: string | null = null;
 
@@ -55,6 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
   const tracker = new UsageTracker(context.globalState);
   const router = new ModelRouter(tracker);
   const conversation = new ConversationManager();
+  const apiKeyManager = new ApiKeyManager(context.secrets);
   const statusBar = new StatusBarManager(tracker, context);
   statusBar.setIdle();
 
@@ -78,6 +80,10 @@ export function activate(context: vscode.ExtensionContext) {
       const sessionId = getSessionId(request, chatContext);
       const historyLength = Math.max(0, config.get<number>('conversationHistoryLength', 6));
       const injectEditorContext = config.get<boolean>('injectEditorContext', true);
+      const classifierMode = config.get<'heuristic' | 'llm'>('classifierMode', 'heuristic');
+      const openaiApiKey = await apiKeyManager.getKey('openai');
+      const anthropicApiKey = await apiKeyManager.getKey('anthropic');
+      const googleApiKey = await apiKeyManager.getKey('google');
 
       const editorContext = injectEditorContext ? getEditorContext() : '';
       const enrichedPrompt = injectEditorContext
@@ -85,7 +91,10 @@ export function activate(context: vscode.ExtensionContext) {
         : userPrompt;
 
       // 1. Classify the task
-      const classification = await classifyTask(userPrompt);
+      const classification = await classifyTask(userPrompt, {
+        mode: classifierMode,
+        openaiApiKey,
+      });
       const systemPrompt = router.buildSystemPrompt(classification.taskType);
 
       // 2. Resolve the best model with token preflight checks
@@ -101,7 +110,13 @@ export function activate(context: vscode.ExtensionContext) {
       const decision = router.resolve(
         classification.taskType,
         estimatedPromptTokens,
-        overrideAtRequestStart ?? undefined
+        overrideAtRequestStart ?? undefined,
+        {
+          openai: !!openaiApiKey,
+          anthropic: !!anthropicApiKey,
+          google: !!googleApiKey,
+          copilot: true,
+        }
       );
 
       const history = conversation.getMessagesForModel(
@@ -132,7 +147,15 @@ export function activate(context: vscode.ExtensionContext) {
         if (decision.model.provider === 'copilot') {
           response = await handleCopilot(decision.modelId, systemPrompt, enrichedPrompt, history, stream, token);
         } else {
-          response = await handleExternalAPI(decision, systemPrompt, enrichedPrompt, history, stream, token);
+          response = await handleExternalAPI(
+            decision,
+            systemPrompt,
+            enrichedPrompt,
+            history,
+            stream,
+            token,
+            { openaiApiKey, anthropicApiKey, googleApiKey }
+          );
         }
 
         // 6. Record usage
@@ -196,6 +219,38 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand(
         'workbench.action.openSettings',
         'smartRouter'
+      );
+    }),
+
+    vscode.commands.registerCommand('smartRouter.configureApiKeys', async () => {
+      const provider = await vscode.window.showQuickPick(
+        [
+          { label: 'OpenAI', value: 'openai' as const },
+          { label: 'Anthropic', value: 'anthropic' as const },
+          { label: 'Google AI', value: 'google' as const },
+        ],
+        { placeHolder: 'Choose provider key to set in VS Code Secret Storage' }
+      );
+
+      if (!provider) {
+        return;
+      }
+
+      const current = await apiKeyManager.getKey(provider.value);
+      const value = await vscode.window.showInputBox({
+        prompt: `Enter ${provider.label} API key`,
+        password: true,
+        ignoreFocusOut: true,
+        value: current,
+      });
+
+      if (value === undefined) {
+        return;
+      }
+
+      await apiKeyManager.setKey(provider.value, value);
+      vscode.window.showInformationMessage(
+        `Smart Router: ${provider.label} API key ${value.trim() ? 'saved' : 'cleared'} securely.`
       );
     }),
 
@@ -300,9 +355,13 @@ async function handleExternalAPI(
   userPrompt: string,
   history: ProviderMessage[],
   stream: vscode.ChatResponseStream,
-  token: vscode.CancellationToken
+  token: vscode.CancellationToken,
+  keys: {
+    openaiApiKey: string;
+    anthropicApiKey: string;
+    googleApiKey: string;
+  }
 ): Promise<ModelResponse> {
-  const config = vscode.workspace.getConfiguration('smartRouter');
   const onChunk = (chunk: string) => {
     if (!token.isCancellationRequested) {
       stream.markdown(chunk);
@@ -311,16 +370,20 @@ async function handleExternalAPI(
 
   switch (decision.model.provider) {
     case 'openai': {
-      const key = config.get<string>('openaiApiKey', '');
-      return callOpenAI(decision.modelId, systemPrompt, userPrompt, history, key, onChunk);
+      return callOpenAI(decision.modelId, systemPrompt, userPrompt, history, keys.openaiApiKey, onChunk);
     }
     case 'anthropic': {
-      const key = config.get<string>('anthropicApiKey', '');
-      return callAnthropic(decision.modelId, systemPrompt, userPrompt, history, key, onChunk);
+      return callAnthropic(
+        decision.modelId,
+        systemPrompt,
+        userPrompt,
+        history,
+        keys.anthropicApiKey,
+        onChunk
+      );
     }
     case 'google': {
-      const key = config.get<string>('googleApiKey', '');
-      return callGoogle(decision.modelId, systemPrompt, userPrompt, history, key, onChunk);
+      return callGoogle(decision.modelId, systemPrompt, userPrompt, history, keys.googleApiKey, onChunk);
     }
     default:
       throw new Error(`Unknown provider: ${decision.model.provider}`);

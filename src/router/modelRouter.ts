@@ -11,7 +11,12 @@ export class ModelRouter {
    *  - over budget
    *  - missing API keys
    */
-  resolve(taskType: TaskType, estimatedTokens = 0, preferredModelId?: string): RoutingDecision {
+  resolve(
+    taskType: TaskType,
+    estimatedTokens = 0,
+    preferredModelId?: string,
+    providerAvailability?: Partial<Record<'openai' | 'anthropic' | 'google' | 'copilot', boolean>>
+  ): RoutingDecision {
     const config = vscode.workspace.getConfiguration('smartRouter');
     const preferences = config.get<Partial<Record<TaskType, string[]>>>('taskModelPreferences', {});
     const configuredChain = preferences[taskType] ?? preferences['general'] ?? ['copilot'];
@@ -19,14 +24,10 @@ export class ModelRouter {
       ? [preferredModelId, ...configuredChain.filter((modelId) => modelId !== preferredModelId)]
       : configuredChain;
 
-    const openaiKey = config.get<string>('openaiApiKey', '');
-    const anthropicKey = config.get<string>('anthropicApiKey', '');
-    const googleKey = config.get<string>('googleApiKey', '');
-
     const hasKey: Record<string, boolean> = {
-      openai: !!openaiKey,
-      anthropic: !!anthropicKey,
-      google: !!googleKey,
+      openai: providerAvailability?.openai ?? false,
+      anthropic: providerAvailability?.anthropic ?? false,
+      google: providerAvailability?.google ?? false,
       copilot: true, // always available if Copilot is installed
     };
 

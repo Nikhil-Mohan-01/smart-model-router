@@ -41,6 +41,10 @@
         "title": "Smart Router: Configure Models & Budgets"
       },
       {
+        "command": "smartRouter.configureApiKeys",
+        "title": "Smart Router: Configure API Keys (Secure)"
+      },
+      {
         "command": "smartRouter.overrideModel",
         "title": "Smart Router: Override Model (Next Request)"
       }
