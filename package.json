@@ -1,0 +1,145 @@
+{
+  "name": "smart-model-router",
+  "displayName": "Smart Model Router",
+  "description": "Automatically routes your AI queries to the best model based on task type, cost, and usage limits",
+  "version": "0.1.0",
+  "publisher": "nikhil",
+  "license": "MIT",
+  "homepage": "https://github.com/nikhil/smart-model-router",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikhil/smart-model-router.git"
+  },
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["AI", "Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "smart-model-router.router",
+        "name": "router",
+        "fullName": "Smart Model Router",
+        "description": "Routes your query to the best AI model based on task, cost, and limits",
+        "isSticky": true
+      }
+    ],
+    "commands": [
+      {
+        "command": "smartRouter.showDashboard",
+        "title": "Smart Router: Show Usage Dashboard"
+      },
+      {
+        "command": "smartRouter.resetUsage",
+        "title": "Smart Router: Reset Usage Stats"
+      },
+      {
+        "command": "smartRouter.configureModels",
+        "title": "Smart Router: Configure Models & Budgets"
+      },
+      {
+        "command": "smartRouter.overrideModel",
+        "title": "Smart Router: Override Model (Next Request)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "smartRouter.overrideModel",
+        "key": "cmd+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "editorTextFocus || chatInputFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Smart Model Router",
+      "properties": {
+        "smartRouter.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your OpenAI API key",
+          "secret": true
+        },
+        "smartRouter.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Anthropic API key",
+          "secret": true
+        },
+        "smartRouter.googleApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Google AI API key",
+          "secret": true
+        },
+        "smartRouter.dailyBudgetUSD": {
+          "type": "number",
+          "default": 2.0,
+          "description": "Total daily budget across all external models (USD)"
+        },
+        "smartRouter.modelBudgets": {
+          "type": "object",
+          "default": {
+            "gpt-4o": 0.80,
+            "gpt-4o-mini": 0.20,
+            "claude-sonnet-4-20250514": 0.80,
+            "claude-haiku-4-5": 0.20,
+            "gemini-1.5-flash": 0.20
+          },
+          "description": "Per-model daily budget caps (USD)"
+        },
+        "smartRouter.taskModelPreferences": {
+          "type": "object",
+          "default": {
+            "debug":     ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
+            "codegen":   ["gpt-4o-mini",              "gemini-1.5-flash", "copilot"],
+            "architect": ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
+            "explain":   ["gpt-4o-mini",              "copilot",     "claude-haiku-4-5"],
+            "test":      ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
+            "general":   ["copilot",                  "gpt-4o-mini", "claude-haiku-4-5"]
+          },
+          "description": "Ordered model preference list per task type"
+        },
+        "smartRouter.enableStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show current model and usage in the status bar"
+        },
+        "smartRouter.classifierMode": {
+          "type": "string",
+          "enum": ["heuristic", "llm"],
+          "default": "heuristic",
+          "description": "How to classify tasks: fast keyword heuristic, or use a cheap LLM call"
+        },
+        "smartRouter.injectEditorContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically prepend active editor context to each request."
+        },
+        "smartRouter.conversationHistoryLength": {
+          "type": "number",
+          "default": 6,
+          "minimum": 0,
+          "description": "Number of previous user/assistant messages to include per chat session."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "qa:checklist": "node scripts/run-qa-checklist.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0"
+  }
+}
