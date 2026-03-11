@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
-import { TaskType, RoutingDecision, MODEL_REGISTRY } from '../types';
+import { TaskType, RoutingDecision, MODEL_REGISTRY, MODEL_ID_ALIASES } from '../types';
 import { UsageTracker } from '../tracker/usageTracker';
+
+function normalizeModelId(modelId: string): string {
+  return MODEL_ID_ALIASES[modelId] ?? modelId;
+}
 
 export class ModelRouter {
   constructor(private readonly tracker: UsageTracker) {}
@@ -23,6 +27,7 @@ export class ModelRouter {
     const chain = preferredModelId
       ? [preferredModelId, ...configuredChain.filter((modelId) => modelId !== preferredModelId)]
       : configuredChain;
+    const normalizedChain = chain.map(normalizeModelId);
 
     const hasKey: Record<string, boolean> = {
       openai: providerAvailability?.openai ?? false,
@@ -34,7 +39,7 @@ export class ModelRouter {
     let chosenId: string | null = null;
     const skipped: string[] = [];
 
-    for (const modelId of chain) {
+    for (const modelId of normalizedChain) {
       const model = MODEL_REGISTRY[modelId];
       if (!model) { skipped.push(`${modelId} (unknown)`); continue; }
 
@@ -76,7 +81,7 @@ export class ModelRouter {
       model,
       taskType,
       reason: `${skipReason}Selected ${model.displayName} for task "${taskType}"`,
-      fallbackChain: chain,
+      fallbackChain: normalizedChain,
     };
   }
 

@@ -245,7 +245,7 @@ test('Context-window guard skips small-context model when prompt is too large', 
   const mock = createVscodeMock({
     config: {
       taskModelPreferences: {
-        codegen: ['gpt-4o-mini', 'gemini-1.5-flash', 'copilot'],
+        codegen: ['gpt-4o-mini', 'gemini-2.5-flash', 'copilot'],
         general: ['copilot'],
       },
       openaiApiKey: 'sk-test',
@@ -267,7 +267,7 @@ test('Context-window guard skips small-context model when prompt is too large', 
       google: true,
       copilot: true,
     });
-    assert.equal(decision.modelId, 'gemini-1.5-flash');
+    assert.equal(decision.modelId, 'gemini-2.5-flash');
     assert.match(decision.reason, /context too large/i);
   });
 });
@@ -411,7 +411,7 @@ test('Google client maps assistant history role to model role', async () => {
   try {
     const { callGoogle } = require(path.join(outRoot, 'router/apiClients.js'));
     const response = await callGoogle(
-      'gemini-1.5-flash',
+      'gemini-2.5-flash',
       'sys',
       'now',
       [{ role: 'assistant', content: 'previous answer' }],
@@ -430,8 +430,37 @@ test('Google client maps assistant history role to model role', async () => {
 
 test('VSIX packaging succeeds', () => {
   runCommand('npx @vscode/vsce package');
-  const vsixPath = path.join(projectRoot, 'smart-model-router-0.1.0.vsix');
+  const pkg = require(path.join(projectRoot, 'package.json'));
+  const vsixPath = path.join(projectRoot, `smart-model-router-${pkg.version}.vsix`);
   assert.ok(require('node:fs').existsSync(vsixPath), 'Expected VSIX file to exist after packaging');
+});
+
+test('Model ID aliases normalize legacy settings IDs', () => {
+  const mock = createVscodeMock({
+    config: {
+      taskModelPreferences: {
+        explain: ['gemini', 'gemini-1.5-flash', 'claude-haiku-4-5', 'copilot'],
+        general: ['copilot'],
+      },
+      modelBudgets: {},
+      dailyBudgetUSD: 2,
+    },
+  });
+
+  withMockedVscode(mock, () => {
+    const { UsageTracker } = require(path.join(outRoot, 'tracker/usageTracker.js'));
+    const { ModelRouter } = require(path.join(outRoot, 'router/modelRouter.js'));
+    const tracker = new UsageTracker(createMemento());
+    const router = new ModelRouter(tracker);
+    const decision = router.resolve('explain', 0, undefined, {
+      openai: false,
+      anthropic: true,
+      google: true,
+      copilot: true,
+    });
+    assert.equal(decision.modelId, 'gemini-2.5-flash');
+    assert.ok(decision.fallbackChain.includes('gemini-2.5-flash'));
+  });
 });
 
 test('API key manager stores keys in secret storage', async () => {

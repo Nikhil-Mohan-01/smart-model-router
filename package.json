@@ -2,15 +2,15 @@
   "name": "smart-model-router",
   "displayName": "Smart Model Router",
   "description": "Automatically routes your AI queries to the best model based on task type, cost, and usage limits",
-  "version": "0.1.0",
-  "publisher": "nikhil",
+  "version": "0.1.2",
+  "publisher": "NikhilMohan",
   "license": "MIT",
   "homepage": "https://github.com/nikhil/smart-model-router",
   "repository": {
     "type": "git",
     "url": "https://github.com/nikhil/smart-model-router.git"
   },
-  "icon": "resources/icon.png",
+  "icon": "resources/smartRouter.jpg",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -89,8 +89,8 @@
             "gpt-4o": 0.80,
             "gpt-4o-mini": 0.20,
             "claude-sonnet-4-20250514": 0.80,
-            "claude-haiku-4-5": 0.20,
-            "gemini-1.5-flash": 0.20
+            "claude-3-5-haiku-latest": 0.20,
+            "gemini-2.5-flash": 0.20
           },
           "description": "Per-model daily budget caps (USD)"
         },
@@ -98,11 +98,11 @@
           "type": "object",
           "default": {
             "debug":     ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
-            "codegen":   ["gpt-4o-mini",              "gemini-1.5-flash", "copilot"],
+            "codegen":   ["gpt-4o-mini",              "gemini-2.5-flash", "copilot"],
             "architect": ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
-            "explain":   ["gpt-4o-mini",              "copilot",     "claude-haiku-4-5"],
+            "explain":   ["gpt-4o-mini",              "copilot",     "claude-3-5-haiku-latest"],
             "test":      ["claude-sonnet-4-20250514", "gpt-4o",      "copilot"],
-            "general":   ["copilot",                  "gpt-4o-mini", "claude-haiku-4-5"]
+            "general":   ["copilot",                  "gpt-4o-mini", "claude-3-5-haiku-latest"]
           },
           "description": "Ordered model preference list per task type"
         },

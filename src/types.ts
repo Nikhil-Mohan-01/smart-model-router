@@ -69,24 +69,31 @@ export const MODEL_REGISTRY: Record<string, ModelDefinition> = {
     contextWindow: 200000,
     strengths: ['debug', 'architect', 'test', 'explain'],
   },
-  'claude-haiku-4-5': {
-    id: 'claude-haiku-4-5',
+  'claude-3-5-haiku-latest': {
+    id: 'claude-3-5-haiku-latest',
     provider: 'anthropic',
-    displayName: 'Claude Haiku 4.5',
+    displayName: 'Claude 3.5 Haiku',
     costPer1KInput: 0.00025,
     costPer1KOutput: 0.00125,
     contextWindow: 200000,
     strengths: ['codegen', 'explain', 'general'],
   },
-  'gemini-1.5-flash': {
-    id: 'gemini-1.5-flash',
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
     provider: 'google',
-    displayName: 'Gemini 1.5 Flash',
+    displayName: 'Gemini 2.5 Flash',
     costPer1KInput: 0.000075,
     costPer1KOutput: 0.0003,
     contextWindow: 1000000,
     strengths: ['codegen', 'explain', 'general'],
   },
+};
+
+export const MODEL_ID_ALIASES: Record<string, string> = {
+  // Backward compatibility for existing user settings.
+  'claude-haiku-4-5': 'claude-3-5-haiku-latest',
+  'gemini-1.5-flash': 'gemini-2.5-flash',
+  gemini: 'gemini-2.5-flash',
 };
 
 // ─── Routing ──────────────────────────────────────────────────────────────

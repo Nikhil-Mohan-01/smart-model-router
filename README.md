@@ -58,8 +58,8 @@ If a provider key is not set, that provider is automatically skipped during rout
   "gpt-4o": 0.80,
   "claude-sonnet-4-20250514": 0.80,
   "gpt-4o-mini": 0.20,
-  "claude-haiku-4-5": 0.20,
-  "gemini-1.5-flash": 0.20
+  "claude-3-5-haiku-latest": 0.20,
+  "gemini-2.5-flash": 0.20
 }
 ```
 
@@ -68,11 +68,11 @@ If a provider key is not set, that provider is automatically skipped during rout
 ```json
 "smartRouter.taskModelPreferences": {
   "debug":     ["claude-sonnet-4-20250514", "gpt-4o", "copilot"],
-  "codegen":   ["gpt-4o-mini", "gemini-1.5-flash", "copilot"],
+  "codegen":   ["gpt-4o-mini", "gemini-2.5-flash", "copilot"],
   "architect": ["claude-sonnet-4-20250514", "gpt-4o", "copilot"],
-  "explain":   ["gpt-4o-mini", "copilot"],
+  "explain":   ["gpt-4o-mini", "copilot", "claude-3-5-haiku-latest"],
   "test":      ["claude-sonnet-4-20250514", "gpt-4o", "copilot"],
-  "general":   ["copilot", "gpt-4o-mini"]
+  "general":   ["copilot", "gpt-4o-mini", "claude-3-5-haiku-latest"]
 }
 ```
 
